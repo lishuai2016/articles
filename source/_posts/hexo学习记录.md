@@ -81,6 +81,24 @@ hexo clean && hexo deploy
 language: zh-Hans 
 所以要把zh-CN.yml文件改成名字为zh-Hans.yml就可以了
 
+## 3.4、Template render error: (unknown path) [Line 154, Column 30] unexpected token: = 报错
+D:\hexo\articles>hexo s –debug
+INFO  Start processing
+FATAL Something's wrong. Maybe you can find the solution here: http://hexo.io/docs/troubleshooting.html
+Template render error: (unknown path) [Line 154, Column 30]
+  unexpected token: =
+    at Object._prettifyError (D:\hexo\articles\node_modules\nunjucks\src\lib.js:36:11)
+    at Template.render (D:\hexo\articles\node_modules\nunjucks\src\environment.js:526:21)
+    at Environment.renderString (D:\hexo\articles\node_modules\nunjucks\src\environment.js:364:17)
+    at Promise.fromCallback.cb (D:\hexo\articles\node_modules\hexo\lib\extend\tag.js:62:48)
+    at tryCatcher (D:\hexo\articles\node_modules\bluebird\js\release\util.js:16:23)
+    at Function.Promise.fromNode.Promise.fromCallback (D:\hexo\articles\node_modules\bluebird\js\release\promis
+    at Tag.render (D:\hexo\articles\node_modules\hexo\lib\extend\tag.js:62:18)
+    at Object.onRenderEnd (D:\hexo\articles\node_modules\hexo\lib\hexo\post.js:282:20)
+    at Promise.then.then.result (D:\hexo\articles\node_modules\hexo\lib\hexo\render.js:65:19)
+    at tryCatcher (D:\hexo\articles\node_modules\bluebird\js\release\util.js:16:23)
+    at Promise._settlePromiseFromHandler (D:\hexo\articles\node_modules\bluebird\js\release\promise.js:512:31)
+
 
 
 
