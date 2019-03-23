@@ -1,9 +1,9 @@
 ---
-   title: Hadoop知识点整理
-   categories: 
-   - hadoop
-   tags:
-   ---
+title: Hadoop知识点整理
+categories: 
+- hadoop
+tags:
+---
 
 #Hadoop知识点整理
 
