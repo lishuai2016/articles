@@ -1,6 +1,6 @@
 # 217. Contains Duplicate
 
-[](https://leetcode-cn.com/problems/contains-duplicate/submissions/)
+[LeetCode地址](https://leetcode-cn.com/problems/contains-duplicate/submissions/)
 
 ## 题目描述
 给定一个整数数组，判断是否存在重复元素。
