@@ -1,3 +1,6 @@
+# 相关文章
+[漫画：什么是一致性哈希？](https://mp.weixin.qq.com/s/yimfkNYF_tIJJqUIzV7TFA)
+
 # 一致 Hash 算法
 
 当我们在做数据库分库分表或者是分布式缓存时，不可避免的都会遇到一个问题:
