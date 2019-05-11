@@ -1,14 +1,33 @@
----
-title: Java线上问题排查工具单
-categories: 
-- jvm
-tags:
----
+# Java线上问题排查工具单
+
+
+总结： 
+- 1、jps -mlvV pid 列出本机所有的jvm实例[重要]
+- 2、jinfo pid 列出运行中的Java程序的运行环境参数
+- 3、jstack pid 打印Java线程的堆栈，跟踪那些线程被阻塞或正等待[重要]
+
+- 4、jmap 18544 物理内存使用情况
+- 5、jmap -histo 18544 打印每个class的实例数目，内存占用，类全名信息
+- 6、jmap -histo:live 18544  查看堆中存活的对象实例[重要]
+- 7、jamp -dump:file=jamp.heapdump 18544   导出进程heapdump文件
+- 8、jmap -heap 18544   输出Java进程的堆内存信息，包括永久代、年轻代、老年代[重要]
+
+- 9、jstat -gcutil 18544  查看jvm的gc情况占比[重要]
+- 10、jstat -gc 18544
+- 11、jstat -compiler 18544 显示jvm实时编译的情况
+- 12、jstat -class 18544 类加载统计[重要]
+
+- 13、java  -XX:+PrintFlagsFinal -version 2>&1 | grep MaxHeapSize  Java查看jvm的最大堆大小
+    
+CPU占用率分析
+- ps -mp 18544 -o THREAD,tid,time | more -10  根据pid得到该进程的线程列表
+- jstack 3741 | grep 18f3 -A 30 | more -30  打印线程的堆栈信息
+- jstack 18544 |tee -a jstack.log    导出堆栈文件
 
 备注：大小单位是KB
 
-# jps
-[jps -mlvV]
+# 1、jps [jps -mlvV]
+```mysql
 413502 org.apache.catalina.startup.Bootstrap -config /export/Domains/pre.ls.com/server1/conf/server.xml start 
 -Djava.util.logging.config.file=/export/Domains/pre.ls.com/server1/conf/logging.properties 
 -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager 
@@ -22,19 +41,21 @@ tags:
 -Djmagick.systemclassloader=no 
 -Dnetworkaddress.cache.ttl=300 
 -Dsun.net.inetaddr.ttl=300 
--Djava.endorsed.dirs=/export/servers/tomcat6.0.33/endorsed 
+-Djava.endorsed.dirs=/ls/tomcat6.0.33/endorsed 
 -Dcatalina.base=/export/Domains/pre.ls.com/server1 
--Dcatalina.home=/export/servers/tomcat6.0.33 
+-Dcatalina.home=/ls/tomcat6.0.33 
 -Djava.io.tmpdir=/export/Domains/pre.ls.com/server1/temp
+```
 
 
-##2、jstack
+# 2、jstack
 jstack 2815
 
 native+java栈:
 jstack -m 2815
 
 jstack 413502 > 1.txt  输出到文件中
+```mysql
 2018-12-26 09:37:25
 Full thread dump Java HotSpot(TM) 64-Bit Server VM (24.71-b01 mixed mode):
 
@@ -451,14 +472,16 @@ Full thread dump Java HotSpot(TM) 64-Bit Server VM (24.71-b01 mixed mode):
 "VM Periodic Task Thread" prio=10 tid=0x00007fdcb80ff000 nid=0x64f73 waiting on condition 
 
 JNI global references: 318
+```
 
 
 
-##3、jinfo
+# 3、jinfo
 
 可看系统启动的参数，如下
 jinfo -flags 413502
 
+```mysql
 Attaching to process ID 413502, please wait...
 Exception in thread "main" java.lang.reflect.InvocationTargetException
 	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
@@ -481,11 +504,13 @@ Caused by: java.lang.InternalError: void* type hasn't been seen when parsing int
 	at sun.jvm.hotspot.tools.Tool.execute(Tool.java:118)
 	at sun.jvm.hotspot.tools.HeapSummary.main(HeapSummary.java:49)
 	... 6 more
+```
 
 
-##4、jmap
+# 4、jmap
 两个用途
-4.1、查看堆的情况
+## 4.1、查看堆的情况
+```mysql
 jmap -heap 413502
 
 Attaching to process ID 413502, please wait...
@@ -510,9 +535,41 @@ Caused by: java.lang.InternalError: void* type hasn't been seen when parsing int
 	at sun.jvm.hotspot.tools.Tool.execute(Tool.java:118)
 	at sun.jvm.hotspot.tools.HeapSummary.main(HeapSummary.java:49)
 	... 6 more
+```
+出现上面这种报错，说明你执行命令的服务器的jdk版本和运行pid服务的jdk版本不一致，使用jps -mlvV 找到对应jdk版本，
+然后使用jmap的全路径访问即可
+```mysql
+jmap 243
+Attaching to process ID 243, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 24.71-b01
+0x0000000000400000	7K	/home/ls/jdk1.7.0_71/bin/java
+0x00007f7e313e2000	108K	/lib64/libresolv-2.12.so
+0x00007f7e315fc000	26K	/lib64/libnss_dns-2.12.so
+0x00007f7e31e8a000	88K	/lib64/libgcc_s-4.4.7-20120601.so.1
+0x00007f7e320a0000	250K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libsunec.so
+0x00007f7e445cb000	44K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libmanagement.so
+0x00007f7e447d3000	89K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libnio.so
+0x00007f7e479e5000	112K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libnet.so
+0x00007f7eaa0e8000	120K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libzip.so
+0x00007f7eaa303000	64K	/lib64/libnss_files-2.12.so
+0x00007f7eaa511000	48K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libinstrument.so
+0x00007f7eaa71b000	214K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libjava.so
+0x00007f7eaa946000	63K	/home/ls/jdk1.7.0_71/jre/lib/amd64/libverify.so
+0x00007f7eaab54000	42K	/lib64/librt-2.12.so
+0x00007f7eaad5c000	582K	/lib64/libm-2.12.so
+0x00007f7eaafe0000	14862K	/home/ls/jdk1.7.0_71/jre/lib/amd64/server/libjvm.so
+0x00007f7eabe56000	1876K	/lib64/libc-2.12.so
+0x00007f7eac1ea000	19K	/lib64/libdl-2.12.so
+0x00007f7eac3ee000	103K	/home/ls/jdk1.7.0_71/lib/amd64/jli/libjli.so
+0x00007f7eac605000	139K	/lib64/libpthread-2.12.so
+0x00007f7eac822000	150K	/lib64/ld-2.12.so
+
+```
 
 
-4.2、dump
+## 4.2、dump
 jmap -dump:live,format=b,file=/tmp/heap2.bin 2815
 或者
 jmap -dump:format=b,file=./heap3.bin 413502
@@ -520,11 +577,11 @@ file后面的是自定义的文件名，最后的数字是进程的pid。如果�
 
 jmap -dump:format=b,file=./heap3.heap 413502
 
-4.3、看看堆都被谁占了? 再配合zprofiler和btrace，排查问题简直是如虎添翼
+## 4.3、看看堆都被谁占了? 再配合zprofiler和btrace，排查问题简直是如虎添翼
 
 jmap -histo 413502 | head -10
-
- num     #instances         #bytes  class name
+```mysql
+num     #instances         #bytes  class name
 ----------------------------------------------
    1:       2164173      145734912  [B
    2:       1214648       76291544  [C
@@ -533,12 +590,15 @@ jmap -histo 413502 | head -10
    5:        844816       20275584  java.lang.String
    6:        334140       16038720  org.jrobin.core.RrdLong
    7:         26831       14111008  [I
+```
 
 
-##5、jstat
+## 5、jstat
 jstat参数众多，但是使用一个就够了,[总结垃圾回收统计,jstat -gcutil pid]
-### jstat -gcutil 413502 1000 
 
+### 5.1、jstat -gcutil 413502 1000 
+
+```mysql
 
 Warning: Unresolved Symbol: sun.gc.metaspace.capacity substituted NaN
 Warning: Unresolved Symbol: sun.gc.metaspace.used substituted NaN
@@ -568,18 +628,22 @@ Warning: Unresolved Symbol: sun.gc.compressedclassspace.capacity substituted NaN
  97.69   0.00   2.00  18.14      -      -    118   13.802     0    0.000   13.802
  97.69   0.00   2.00  18.14      -      -    118   13.802     0    0.000   13.802
  97.69   0.00   2.00  18.14      -      -    118   13.802     0    0.000   13.802
-S0：幸存1区当前使用比例
-S1：幸存2区当前使用比例
-E：伊甸园区使用比例
-O：老年代使用比例
-M：元数据区使用比例
-CCS：压缩使用比例
-YGC：年轻代垃圾回收次数
-FGC：老年代垃圾回收次数
-FGCT：老年代垃圾回收消耗时间
-GCT：垃圾回收消耗总时间
+ 
+ S0：幸存1区当前使用比例
+ S1：幸存2区当前使用比例
+ E：伊甸园区使用比例
+ O：老年代使用比例
+ M：元数据区使用比例
+ CCS：压缩使用比例
+ YGC：年轻代垃圾回收次数
+ FGC：老年代垃圾回收次数
+ FGCT：老年代垃圾回收消耗时间
+ GCT：垃圾回收消耗总时间
+```
 
-### 类加载统计：
+
+
+### 5.2、类加载统计：
 jstat -class 413502
 
 Loaded  Bytes  Unloaded  Bytes     Time   
@@ -591,20 +655,25 @@ Unloaded：未加载数量
 Bytes:未加载占用空间
 Time：时间
 
- ### 编译统计
+### 5.3、编译统计
 jstat -compiler 413502
-
+```mysql
 Compiled Failed Invalid   Time   FailedType FailedMethod
     1375      1       0    13.70          1 org/apache/tomcat/util/IntrospectionUtils setProperty
-Compiled：编译数量。
-Failed：失败数量
-Invalid：不可用数量
-Time：时间
-FailedType：失败类型
-FailedMethod：失败的方法
+    
+    Compiled：编译数量。
+    Failed：失败数量
+    Invalid：不可用数量
+    Time：时间
+    FailedType：失败类型
+    FailedMethod：失败的方法
+```
 
- ### 垃圾回收统计
+
+
+ ### 5.4、垃圾回收统计
 jstat -gc 413502 1000 
+```mysql
 Warning: Unresolved Symbol: sun.gc.metaspace.capacity substituted NaN
 Warning: Unresolved Symbol: sun.gc.metaspace.used substituted NaN
 Warning: Unresolved Symbol: sun.gc.compressedclassspace.capacity substituted NaN
@@ -638,8 +707,10 @@ YGCT：年轻代垃圾回收消耗时间
 FGC：老年代垃圾回收次数
 FGCT：老年代垃圾回收消耗时间
 GCT：垃圾回收消耗总时间
+```
 
-### 堆内存统计
+### 5.5、堆内存统计
+```mysql
 jstat -gccapacity 413502  
 Warning: Unresolved Symbol: sun.gc.metaspace.minCapacity substituted NaN
 Warning: Unresolved Symbol: sun.gc.metaspace.maxCapacity substituted NaN
@@ -668,8 +739,10 @@ CCSMX：最大压缩类空间大小
 CCSC：当前压缩类空间大小
 YGC：年轻代gc次数
 FGC：老年代GC次数
+```
 
 ### 新生代垃圾回收统计
+```mysql
 jstat -gcnew 413502  
 
 S0C：第一个幸存区大小
@@ -683,7 +756,10 @@ EC：伊甸园区的大小
 EU：伊甸园区的使用大小
 YGC：年轻代垃圾回收次数
 YGCT：年轻代垃圾回收消耗时间
+```
+
 ### 新生代内存统计
+```mysql
 jstat -gcnewcapacity 413502  
 
 
@@ -698,7 +774,11 @@ ECMX：最大伊甸园区大小
 EC：当前伊甸园区大小
 YGC：年轻代垃圾回收次数
 FGC：老年代回收次数
+```
+
+
 ### 老年代垃圾回收统计
+```mysql
 jstat -gcold 413502  
 
 MC：方法区大小
@@ -711,7 +791,11 @@ YGC：年轻代垃圾回收次数
 FGC：老年代垃圾回收次数
 FGCT：老年代垃圾回收消耗时间
 GCT：垃圾回收消耗总时间
+```
+
+
 ### 老年代内存统计
+```mysql
 jstat -gcoldcapacity 413502  
 
 OGCMN：老年代最小容量
@@ -722,7 +806,11 @@ YGC：年轻代垃圾回收次数
 FGC：老年代垃圾回收次数
 FGCT：老年代垃圾回收消耗时间
 GCT：垃圾回收消耗总时间
+```
+
+
 ### 元数据空间统计(jdk1.8)
+```mysql
 jstat -gcmetacapacity 413502  
 
 MCMN: 最小元数据容量
@@ -735,8 +823,9 @@ YGC：年轻代垃圾回收次数
 FGC：老年代垃圾回收次数
 FGCT：老年代垃圾回收消耗时间
 GCT：垃圾回收消耗总时间
+```
 
-##6、jdb
+## 6、jdb
 时至今日，jdb也是经常使用的。 
 jdb可以用来预发debug,假设你预发的java_home是/opt/taobao/java/，远程调试端口是8000.那么
 jdb -attach 8000
@@ -753,35 +842,7 @@ sudo -u admin /opt/taobao/java/bin/java -classpath /opt/taobao/java/lib/sa-jdi.j
 http://rednaxelafx.iteye.com/blog/1847971
 
 
+# 参考文章
+[jstat命令查看jvm的GC情况 （以Linux为例）](https://www.cnblogs.com/yjd_hycf_space/p/7755633.html)
 
-
-
-
-
-其他
-
-dmesg
-
-如果发现自己的java进程悄无声息的消失了，几乎没有留下任何线索，那么dmesg一发，很有可能有你想要的。
-
-sudo dmesg|grep -i kill|less
-去找关键字oom_killer。找到的结果类似如下:
-
-[6710782.021013] java invoked oom-killer: gfp_mask=0xd0, order=0, oom_adj=0, oom_scoe_adj=0
-[6710782.070639] [<ffffffff81118898>] ? oom_kill_process+0x68/0x140 
-[6710782.257588] Task in /LXC011175068174 killed as a result of limit of /LXC011175068174 
-[6710784.698347] Memory cgroup out of memory: Kill process 215701 (java) score 854 or sacrifice child 
-[6710784.707978] Killed process 215701, UID 679, (java) total-vm:11017300kB, anon-rss:7152432kB, file-rss:1232kB
-以上表明，对应的java进程被系统的OOM Killer给干掉了，得分为854.
-解释一下OOM killer（Out-Of-Memory killer），该机制会监控机器的内存资源消耗。当机器内存耗尽前，该机制会扫描所有的进程（按照一定规则计算，内存占用，时间等），挑选出得分最高的进程，然后杀死，从而保护机器。
-
-dmesg日志时间转换公式:
-log实际时间=格林威治1970-01-01+(当前时间秒数-系统启动至今的秒数+dmesg打印的log时间)秒数：
-
-date -d "1970-01-01 UTC `echo "$(date +%s)-$(cat /proc/uptime|cut -f 1 -d' ')+12288812.926194"|bc ` seconds"
-剩下的，就是看看为什么内存这么大，触发了OOM-Killer了。
-
-
-
-[参考](https://www.cnblogs.com/yjd_hycf_space/p/7755633.html)
 
