@@ -1,9 +1,4 @@
----
-title: 优秀开源项目整理(GitHub&Gitee)
-categories: 
-- 优秀网站
-tags:
----
+# 优秀开源项目整理(GitHub&Gitee)
 
 # 基础知识&面试系列
 ## advanced-java
